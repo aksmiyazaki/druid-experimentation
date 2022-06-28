@@ -1,12 +1,13 @@
 .PHONY: help
 help:
-	@echo "purge-environment: removes all containers from environment."
-	@echo "init-clean-environment: initializes a clear environment. REMOVES all data."
-	@echo "init-environment: initializes environment."
+	@echo "purge-containers: removes all containers from environments."
+	@echo "purge-volumes: purges all system volumes."
+	@echo "start-clean-environment: startializes a clear environment. REMOVES all data."
+	@echo "start-environment: startializes environment."
 	@echo "stop-environment: stops all containers"
 
-.PHONY: purge-environment
-purge-environment:
+.PHONY: purge-containers
+purge-containers:
 	docker container rm postgres
 	docker container rm zookeeper
 	docker container rm coordinator
@@ -15,12 +16,16 @@ purge-environment:
 	docker container rm middlemanager
 	docker container rm router
 
-.PHONY: init-clean-environment
-init-clean-environment:
+.PHONY: purge-volumes
+purge-volumes:
+	docker volume prune -f
+
+.PHONY: start-clean-environment
+start-clean-environment: purge-volumes
 	docker-compose up -d --force-recreate
 
-.PHONY: init-environment
-init-environment:
+.PHONY: start-environment
+start-environment:
 	docker-compose up -d
 
 .PHONY: stop-environment
