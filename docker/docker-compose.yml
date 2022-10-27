@@ -32,14 +32,12 @@ services:
   postgres:
     container_name: postgres
     image: postgres:latest
+    volumes:
+      - metadata_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=FoolishPassword
       - POSTGRES_USER=druid
       - POSTGRES_DB=druid
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./pg_hba.conf:/usr/local/var/postgres/pg_hba.conf
 
   # Need 3.5 or later for container nodes
   zookeeper:
@@ -51,7 +49,7 @@ services:
       - ZOO_MY_ID=1
 
   coordinator:
-    image: apache/druid:0.23.0
+    image: apache/druid:24.0.0
     container_name: coordinator
     volumes:
       - druid_shared:/opt/shared
@@ -67,7 +65,7 @@ services:
       - environment
 
   broker:
-    image: apache/druid:0.23.0
+    image: apache/druid:24.0.0
     container_name: broker
     volumes:
       - broker_var:/opt/druid/var
@@ -83,7 +81,7 @@ services:
       - environment
 
   historical:
-    image: apache/druid:0.23.0
+    image: apache/druid:24.0.0
     container_name: historical
     volumes:
       - druid_shared:/opt/shared
@@ -100,7 +98,7 @@ services:
       - environment
 
   middlemanager:
-    image: apache/druid:0.23.0
+    image: apache/druid:24.0.0
     container_name: middlemanager
     volumes:
       - druid_shared:/opt/shared
@@ -118,7 +116,7 @@ services:
       - environment
 
   router:
-    image: apache/druid:0.23.0
+    image: apache/druid:24.0.0
     container_name: router
     volumes:
       - router_var:/opt/druid/var
