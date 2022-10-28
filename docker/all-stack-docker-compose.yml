@@ -1,64 +1,31 @@
 #
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 x-superset-image: &superset-image apache/superset:${TAG:-latest-dev}
-x-superset-user: &superset-user root
 x-superset-depends-on: &superset-depends-on
-  - supersetdb
+  - db
   - redis
 x-superset-volumes: &superset-volumes
   # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
-  - ./docker:/app/docker
-  - ./superset:/app/superset
-  - ./superset-frontend:/app/superset-frontend
+  - ../superset/docker:/app/docker
   - superset_home:/app/superset_home
-  - ./tests:/app/tests
-
 
 version: "3.7"
 
-volumes:
-  metadata_data: {}
-  middle_var: {}
-  historical_var: {}
-  broker_var: {}
-  coordinator_var: {}
-  router_var: {}
-  druid_shared: {}
-  superset_home:
-    external: false
-  db_home:
-    external: false
-  redis:
-    external: false
-
-
 services:
-  redis:
-    image: redis:latest
-    container_name: superset_cache
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - redis:/data
-
-
   postgres:
     container_name: postgres
     image: postgres:latest
@@ -68,16 +35,6 @@ services:
       - POSTGRES_PASSWORD=FoolishPassword
       - POSTGRES_USER=druid
       - POSTGRES_DB=druid
-
-  supersetdb:
-    env_file: docker/.env
-    image: postgres:14
-    container_name: superset_db
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - db_home:/var/lib/postgresql/data
 
   # Need 3.5 or later for container nodes
   zookeeper:
@@ -104,9 +61,9 @@ services:
     env_file:
       - environment
 
-  broker:
+  druid-broker:
     image: apache/druid:24.0.0
-    container_name: broker
+    container_name: druid-broker
     volumes:
       - broker_var:/opt/druid/var
     depends_on: 
@@ -171,110 +128,81 @@ services:
     env_file:
       - environment
 
+  redis:
+    image: redis:latest
+    container_name: superset_cache
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+
+  db:
+    env_file: ../superset/docker/.env-non-dev
+    image: postgres:10
+    container_name: superset_db
+    restart: unless-stopped
+    volumes:
+      - db_home:/var/lib/postgresql/data
+
   superset:
-    env_file: docker/.env
+    env_file: ../superset/docker/.env-non-dev
     image: *superset-image
     container_name: superset_app
-    command: ["/app/docker/docker-bootstrap.sh", "app"]
+    command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+    user: "root"
     restart: unless-stopped
     ports:
       - 8088:8088
-    user: *superset-user
     depends_on: *superset-depends-on
     volumes: *superset-volumes
-    environment:
-      CYPRESS_CONFIG: "${CYPRESS_CONFIG}"
-
-  superset-websocket:
-    container_name: superset_websocket
-    build: ./superset-websocket
-    image: superset-websocket
-    ports:
-      - 8080:8080
-    depends_on:
-      - redis
-    # Mount everything in superset-websocket into container and
-    # then exclude node_modules and dist with bogus volume mount.
-    # This is necessary because host and container need to have
-    # their own, separate versions of these files. .dockerignore
-    # does not seem to work when starting the service through
-    # docker-compose.
-    #
-    # For example, node_modules may contain libs with native bindings.
-    # Those bindings need to be compiled for each OS and the container
-    # OS is not necessarily the same as host OS.
-    volumes:
-      - ./superset-websocket:/home/superset-websocket
-      - /home/superset-websocket/node_modules
-      - /home/superset-websocket/dist
-    environment:
-      - PORT=8080
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_SSL=false
 
   superset-init:
     image: *superset-image
     container_name: superset_init
     command: ["/app/docker/docker-init.sh"]
-    env_file: docker/.env
+    env_file: ../superset/docker/.env-non-dev
     depends_on: *superset-depends-on
-    user: *superset-user
+    user: "root"
     volumes: *superset-volumes
-    environment:
-      CYPRESS_CONFIG: "${CYPRESS_CONFIG}"
     healthcheck:
       disable: true
-
-  superset-node:
-    image: node:16
-    container_name: superset_node
-    command: ["/app/docker/docker-frontend.sh"]
-    env_file: docker/.env
-    depends_on: *superset-depends-on
-    volumes: *superset-volumes
 
   superset-worker:
     image: *superset-image
     container_name: superset_worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
-    env_file: docker/.env
+    env_file: ../superset/docker/.env-non-dev
     restart: unless-stopped
     depends_on: *superset-depends-on
-    user: *superset-user
+    user: "root"
     volumes: *superset-volumes
     healthcheck:
       test: ["CMD-SHELL", "celery inspect ping -A superset.tasks.celery_app:app -d celery@$$HOSTNAME"]
-    # Bump memory limit if processing selenium / thumbnails on superset-worker
-    # mem_limit: 2038m
-    # mem_reservation: 128M
 
   superset-worker-beat:
     image: *superset-image
     container_name: superset_worker_beat
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
-    env_file: docker/.env
+    env_file: ../superset/docker/.env-non-dev
     restart: unless-stopped
     depends_on: *superset-depends-on
-    user: *superset-user
+    user: "root"
     volumes: *superset-volumes
     healthcheck:
       disable: true
 
-  superset-tests-worker:
-    image: *superset-image
-    container_name: superset_tests_worker
-    command: ["/app/docker/docker-bootstrap.sh", "worker"]
-    env_file: docker/.env
-    environment:
-      DATABASE_HOST: localhost
-      DATABASE_DB: test
-      REDIS_CELERY_DB: 2
-      REDIS_RESULTS_DB: 3
-      REDIS_HOST: localhost
-    network_mode: host
-    depends_on: *superset-depends-on
-    user: *superset-user
-    volumes: *superset-volumes
-    healthcheck:
-      test: ["CMD-SHELL", "celery inspect ping -A superset.tasks.celery_app:app -d celery@$$HOSTNAME"]
+
+
+volumes:
+  superset_home:
+    external: false
+  db_home:
+    external: false
+  redis:
+    external: false
+  metadata_data: {}
+  middle_var: {}
+  historical_var: {}
+  broker_var: {}
+  coordinator_var: {}
+  router_var: {}
+  druid_shared: {}
