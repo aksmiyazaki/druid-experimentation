@@ -1,3 +1,6 @@
 [submodule "superset"]
 	path = superset
 	url = git@github.com:apache/superset.git
+[submodule "kafka-producer"]
+	path = kafka-producer
+	url = git@github.com:aksmiyazaki/challenge-event-processor.git
