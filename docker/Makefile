@@ -22,6 +22,7 @@ purge-containers:
 	docker container rm superset_cache
 	docker container rm superset_db
 	docker container rm postgres
+	docker container rm kafka
 
 .PHONY: purge-volumes
 purge-volumes:

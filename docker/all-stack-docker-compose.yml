@@ -192,27 +192,19 @@ services:
 
   kafka:
     image: confluentinc/cp-enterprise-kafka:3.3.0
+    container_name: kafka
     hostname: kafka
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_BROKER_RACK: rack-a
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_ADVERTISED_HOST_NAME: '0.0.0.0'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://0.0.0.0:9092'
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      KAFKA_DELETE_TOPIC_ENABLE: "true"
-      KAFKA_JMX_PORT: 9999
-      KAFKA_JMX_HOSTNAME: 'broker-1'
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-1:9092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   schema_registry:
     image: confluentinc/cp-schema-registry:3.3.0
