@@ -2,8 +2,7 @@
 help:
 	@echo "purge-containers: removes all containers from environments."
 	@echo "purge-volumes: purges all system volumes."
-	@echo "start-clean-environment: startializes a clear environment. REMOVES all data."
-	@echo "start-environment: startializes environment."
+	@echo "start-environment-block: initializes the environment. Blocking call."
 	@echo "stop-environment: stops all containers"
 
 .PHONY: purge-containers
@@ -27,10 +26,6 @@ purge-containers:
 .PHONY: purge-volumes
 purge-volumes:
 	docker volume prune -f
-
-.PHONY: start-clean-environment
-start-clean-environment: purge-volumes
-	docker compose -f all-stack-docker-compose.yml up -d --force-recreate
 
 .PHONY: start-environment-block
 start-environment-block:
