@@ -15,6 +15,16 @@ Some of the sources:
 This step by step is made for Linux.  
 Mac users may have trouble with memory limits of Docker (I've read this somewhere), having to adjust some configurations.
 
+### Clonning submodules
+After clonning this repository, run:
+
+```
+git submodule init
+git submodule update
+```
+
+This will fetch the submodules used into this experiment.
+
 ### Starting the environment
 Keep in mind that the environment is composed of 15 containers.
 If you have a small amount of RAM (16GB), please, reboot your machine before trying this.
