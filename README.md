@@ -25,7 +25,7 @@ make purge-containers
 make purge-volumes
 ```
 
-This clear the whole environment, giving you a fresh start.
+This clears the whole environment, giving you a fresh start.
 To check that the environment is clear, just run
 
 ```
